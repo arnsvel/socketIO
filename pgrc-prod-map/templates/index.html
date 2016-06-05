@@ -1,0 +1,172 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>PGRC Status</title>
+</head>
+<body>
+    <h1>PGRC Status</h1>
+    <h2>Send:</h2>
+    <form id="join" method="POST" action='#'>
+        <input type="text" name="join_room" id="join_room" placeholder="Room Name">
+        <input type="submit" value="Join Room">
+    </form><br>
+    <form id="leave" method="POST" action='#'>
+        <input type="text" name="leave_room" id="leave_room" placeholder="Room Name">
+        <input type="submit" value="Leave Room">
+    </form><br>
+    <form id="send_room" method="POST" action='#'>
+        <input type="text" name="room_name" id="room_name" placeholder="Room Name">
+        <input type="text" name="job_order_number" id="job_order_number" placeholder="Job Order Number">
+        <label><input type="checkbox" id="isCombineJOM">Combine Job Order materials?</label>
+        <input type="text" name="material_number" id="material_number" placeholder="Material Number">
+        <select id="process_code_select">
+            <option value="DI">Disassembly</option>
+            <option value="CB">Control Body</option>
+            <option value="CL">Cleaning</option>
+            <option value="IFTDI">IFT Disassembly</option>
+            <option value="DDI">Distal Disassembly</option>
+            <option value="DA">Distal Assembly</option>
+            <option value="WA">Wash</option>
+            <option value="SA">Segment Assembly</option>
+            <option value="ST">Stuffing</option>
+            <option value="IFTQC">IFT QC</option>
+            <option value="EPL1">EPL 1</option>
+            <option value="BI">Binding</option>
+            <option value="BG">Black Glue</option>
+            <option value="EPL2">EPL 2</option>
+            <option value="VA">Vaccum</option>
+            <option value="EPL3-6">EPL3->EPL4->EPL5->EPL6</option>
+            <option value="DCI">Distal Cap Installation</option>
+            <option value="QC">QC</option>
+            <option value="DISI">Disinspection</option>
+            <option value="PA">Packing</option>
+            <option value="SH">Shipping</option>
+        </select>
+        <select id="status_code_select">
+            <option value="01">On-queue</option>
+            <option value="02">In-progress</option>
+            <option value="03">Done</option>
+        </select>
+        <input type="submit" value="Send to Room">
+    </form><br>
+    <form id="employee_assignment" method="POST" action='#'>
+        <input type="text" name="room_name_employee" id="room_name_employee" placeholder="Room Name">
+        <input type="text" name="emp_id" id="emp_id" placeholder="Employee ID">
+        <input type="text" name="first_name" id="first_name" placeholder="First Name">
+        <input type="text" name="last_name" id="last_name" placeholder="Last Name">
+        <select id="process_code_employee_select">
+            <option value="DI">Disassembly</option>
+            <option value="CB">Control Body</option>
+            <option value="CL">Cleaning</option>
+            <option value="IFTDI">IFT Disassembly</option>
+            <option value="DDI">Distal Disassembly</option>
+            <option value="DA">Distal Assembly</option>
+            <option value="WA">Wash</option>
+            <option value="SA">Segment Assembly</option>
+            <option value="ST">Stuffing</option>
+            <option value="IFTQC">IFT QC</option>
+            <option value="EPL1">EPL 1</option>
+            <option value="BI">Binding</option>
+            <option value="BG">Black Glue</option>
+            <option value="EPL2">EPL 2</option>
+            <option value="VA">Vaccum</option>
+            <option value="EPL3-6">EPL3->EPL4->EPL5->EPL6</option>
+            <option value="DCI">Distal Cap Installation</option>
+            <option value="QC">QC</option>
+            <option value="DISI">Disinspection</option>
+            <option value="PA">Packing</option>
+            <option value="SH">Shipping</option>
+        </select>
+        <input type="submit" value="Send to Room">
+    </form><br>
+    <form id="disconnect" method="POST" action="#">
+        <input type="submit" value="Disconnect">
+    </form>
+    <h2>Receive:</h2>
+    <div id="log"></div>
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.12.4.js" integrity="sha256-Qw82+bXyGq6MydymqBxNPYTaUXXq7c8v3CwiYwLLNXU=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/pgrc');
+
+            $("input").prop("checked", false);
+            $("#material_number").show();
+
+            // event handler for server sent data
+            socket.on('connect', function() {
+                socket.emit('cpgrc event', {data: 'I\'m connected!'});
+            });
+
+            socket.on('server response', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+            });
+
+            socket.on('jobOrderMaterialEvent', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Job Order Material Sent #' + msg.count + ': ' + msg.data).html());
+            });
+
+            socket.on('jobOrderEvent', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Job Order Sent #' + msg.count + ': ' + msg.data).html());
+            });
+
+            socket.on('employeeAssignmentEvent', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Employee Assignment Sent #' + msg.count + ': ' + msg.data).html());
+            });
+
+            $('form#join').submit(function(event) {
+                var room = $('#join_room').val();
+                socket.emit('join room', {room: room});
+
+                // Assign Room name
+                $('#leave_room').val(room);
+                $('#room_name').val(room);
+                $('#room_name_employee').val(room);
+
+                return false;
+            });
+
+            $('form#leave').submit(function(event) {
+                socket.emit('leave room', {room: $('#leave_room').val()});
+                return false;
+            });
+
+            $('form#send_room').submit(function(event) {
+                var data = $.trim($('#job_order_number').val());
+                var jo_status = 1;
+                if (!$('#isCombineJOM').prop("checked")) {
+                    jo_status = 0;
+                    data += '-' + $.trim($('#material_number').val());
+                }
+                data += '-' + $('#process_code_select option:selected').val();
+                data += '-' + $('#status_code_select option:selected').val();
+                console.log(data);
+                socket.emit('rpgrc event', {room: $('#room_name').val(), data: data, event_type: jo_status});
+                return false;
+            });
+
+            $('form#employee_assignment').submit(function(event) {
+                var data = {
+                    emp_id: parseInt($('#emp_id').val()) || 0,
+                    first_name: $.trim($('#first_name').val()),
+                    last_name: $.trim($('#last_name').val()),
+                    process_code: $('#process_code_employee_select option:selected').val()
+                };
+                console.log(JSON.stringify(data));
+                socket.emit('rpgrc event', {room: $('#room_name_employee').val(), data: JSON.stringify(data), event_type: 2});
+                return false;
+            });
+
+            $('form#disconnect').submit(function(event) {
+                socket.emit('disconnect request');
+                return false;
+            });
+
+            $('#isCombineJOM').click(function() {
+                $("#material_number").toggle(!this.checked);
+            });
+        });
+    </script>
+</body>
+</html>

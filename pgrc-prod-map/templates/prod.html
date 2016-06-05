@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>PGRC Production Status</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/pgrc');
+
+            socket.on('prod response', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+            });
+
+            socket.on('jobOrderMaterialEvent', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Job Order Material Received #' + msg.count + ': ' + msg.data).html());
+            });
+
+            socket.on('jobOrderEvent', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Job Order Received #' + msg.count + ': ' + msg.data).html());
+            });
+
+            socket.on('employeeAssignmentEvent', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Employee Assignment Received #' + msg.count + ': ' + msg.data).html());
+            });
+
+            function initialize() {
+                socket.emit('prod event', {data: 'I\'m connected!'});
+                socket.emit('join room', {room: 'PGRC-PROD'});
+            }
+
+            initialize();
+        });
+    </script>
+</head>
+<body>
+    <h1>PGRC Production Status</h1>
+    <h2>Receive:</h2>
+    <div id="log"></div>
+</body>
+</html>
